@@ -4,7 +4,7 @@ part of virtual_keyboard_multi_language;
 ///  `height` argument to `VirtualKeyboard` widget.
 const double _virtualKeyboardDefaultHeight = 300;
 
-const int _virtualKeyboardBackspaceEventPerioud = 250;
+const int _virtualKeyboardBackspaceEventPeriod = 250;
 
 /// Virtual Keyboard widget.
 class VirtualKeyboard extends StatefulWidget {
@@ -259,7 +259,6 @@ class _VirtualKeyboardState extends State<VirtualKeyboard> {
 
   Widget _numeric() {
     return Container(
-      height: height,
       width: width ?? MediaQuery.of(context).size.width,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -309,14 +308,10 @@ class _VirtualKeyboardState extends State<VirtualKeyboard> {
       });
 
       if (this.reverseLayout) items = items.reversed.toList();
-      return Material(
-        color: Colors.transparent,
-        child: Row(
+      return Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           crossAxisAlignment: CrossAxisAlignment.center,
-          // Generate keboard keys
           children: items,
-        ),
       );
     });
 
@@ -329,21 +324,61 @@ class _VirtualKeyboardState extends State<VirtualKeyboard> {
   /// Creates default UI element for keyboard Key.
   Widget _keyboardDefaultKey(VirtualKeyboardKey key) {
     return Expanded(
-        child: InkWell(
-      onTap: () {
-        _onKeyPress(key);
-      },
-      child: Container(
-        height: height / customLayoutKeys.activeLayout.length,
-        child: Center(
-            child: Text(
-          alwaysCaps
-              ? key.capsText!
-              : (isShiftEnabled ? key.capsText! : key.text!),
-          style: textStyle,
-        )),
-      ),
-    ));
+     child: isIos ?
+     Container(
+         padding: EdgeInsets.all(2),
+         child: Container(
+             decoration: BoxDecoration(
+                 border: Border.all(
+                     color: textColor,
+                     width: .75
+                 ),
+                 borderRadius: BorderRadius.all(
+                     Radius.circular(10)
+                 )
+             ),
+             child: CupertinoButton(
+               padding: EdgeInsets.all(2.0),
+               minSize: fontSize,
+               onPressed: () {
+                 _onKeyPress(key);
+               },
+               child: Text(
+                 alwaysCaps
+                     ? key.capsText!
+                     : (isShiftEnabled ? key.capsText! : key.text!),
+                 style: textStyle,
+               ),
+             )
+         )
+     )
+     :
+     InkWell(
+        onTap: () => _onKeyPress(key),
+        child: Container(
+          padding: EdgeInsets.all(2),
+          child: Container(
+            decoration: BoxDecoration(
+                border: Border.all(
+                  color: textColor,
+                  width: .75
+                ),
+                borderRadius: BorderRadius.all(
+                  Radius.circular(10)
+                )
+            ),
+            child: Center(
+                child: Text(
+                alwaysCaps
+                    ? key.capsText!
+                    : (isShiftEnabled ? key.capsText! : key.text!),
+                style: textStyle,
+              )
+            )
+          )
+        )
+      )
+    );
   }
 
   /// Creates default UI element for keyboard Action Key.
@@ -359,7 +394,7 @@ class _VirtualKeyboardState extends State<VirtualKeyboard> {
               longPress = true;
               // Start sending backspace key events while longPress is true
               Timer.periodic(
-                  Duration(milliseconds: _virtualKeyboardBackspaceEventPerioud),
+                  Duration(milliseconds: _virtualKeyboardBackspaceEventPeriod),
                   (timer) {
                 if (longPress) {
                   _onKeyPress(key);
@@ -379,6 +414,7 @@ class _VirtualKeyboardState extends State<VirtualKeyboard> {
               child: Icon(
                 Icons.backspace,
                 color: textColor,
+                size: fontSize,
               ),
             ));
         break;
@@ -408,32 +444,57 @@ class _VirtualKeyboardState extends State<VirtualKeyboard> {
                 Icons.language,
                 color: textColor,
               ),
-            ));
+            )
+        );
         break;
     }
 
-    var wdgt = InkWell(
-      onTap: () {
-        if (key.action == VirtualKeyboardKeyAction.Shift) {
-          if (!alwaysCaps) {
-            setState(() {
-              isShiftEnabled = !isShiftEnabled;
-            });
+    final widget = isIos ?
+      CupertinoButton(
+        padding: EdgeInsets.all(8.0),
+        minSize: 25,
+        pressedOpacity: 0.4,
+        onPressed: () {
+          if (key.action == VirtualKeyboardKeyAction.Shift) {
+            if (!alwaysCaps) {
+              setState(() {
+                isShiftEnabled = !isShiftEnabled;
+              });
+            }
           }
-        }
+          _onKeyPress(key);
+        },
+        child: Container(
+          padding: EdgeInsets.all(2),
+          height: fontSize,
+          alignment: Alignment.center,
+          child: actionKey,
+        ),
+      )
+      :
+      InkWell(
+        onTap: () {
+          if (key.action == VirtualKeyboardKeyAction.Shift) {
+            if (!alwaysCaps) {
+              setState(() {
+                isShiftEnabled = !isShiftEnabled;
+              });
+            }
+          }
+          _onKeyPress(key);
+        },
+        child: Container(
+          alignment: Alignment.center,
+          height: fontSize,
+          child: actionKey,
+        ),
+      );
 
-        _onKeyPress(key);
-      },
-      child: Container(
-        alignment: Alignment.center,
-        height: height / customLayoutKeys.activeLayout.length,
-        child: actionKey,
-      ),
+    return Expanded(
+      flex: key.action == VirtualKeyboardKeyAction.Space ? 6 : 1,
+      child: widget
     );
-
-    if (key.action == VirtualKeyboardKeyAction.Space)
-      return Expanded(flex: 6, child: wdgt);
-    else
-      return Expanded(child: wdgt);
   }
+
+  bool get isIos => defaultTargetPlatform == TargetPlatform.iOS;
 }

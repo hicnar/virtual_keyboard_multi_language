@@ -55,7 +55,6 @@ class _MyHomePageState extends State<MyHomePage> {
           children: <Widget>[
             Text(
               text,
-              style: Theme.of(context).textTheme.display1,
             ),
             Text(
               _controllerText.text,
